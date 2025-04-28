@@ -7,6 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from core.config import BOT_TOKEN
 from handlers.chat import router
+from handlers.model import router as model_router
 from utils.logger import logger
 
 async def main():
@@ -28,6 +29,7 @@ async def main():
     
     # Регистрируем роутеры
     dp.include_router(router)
+    dp.include_router(model_router)
     
     # Запускаем бота
     logger.info("Бот запущен!")

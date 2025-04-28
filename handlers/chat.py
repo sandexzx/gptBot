@@ -23,8 +23,9 @@ async def start_handler(message: Message):
         f"Йоу, {user_name}! 🤖\n\n"
         "Я твой бот с интеграцией GPT-4.1-nano. Просто отправь мне сообщение, "
         "и я перешлю его в нейронку для обработки!\n\n"
-        "Чтобы очистить историю, используй /reset"
+        "Чтобы очистить историю, используй /reset\n"
         "Для установки системного промпта используй /system\n"
+        "Для выбора модели используй /model\n"
         "Для сброса системного промпта используй /reset_system"
     )
     logger.info(f"Пользователь {message.from_user.id} запустил бота")
@@ -89,13 +90,18 @@ async def process_message(message: Message):
     # Отправляем индикатор набора текста
     await message.bot.send_chat_action(chat_id=user_id, action="typing")
     
-    logger.info(f"Получен запрос от пользователя {user_id}: {user_message[:20]}...")
+    logger.info(f"Получен запрос от пользователя {user_id}: {user_message}...")
     
     # Получаем ответ от OpenAI
-    response, prompt_tokens, completion_tokens = await openai_client.get_completion(user_id, user_message)
+    response, prompt_tokens, completion_tokens, input_cost, output_cost, input_cost_rub, output_cost_rub, total_cost_rub = await openai_client.get_completion(user_id, user_message)
     
-    # Добавляем информацию о токенах
-    token_info = f"\n\n📊 Токены: отправлено {prompt_tokens}, получено {completion_tokens}, всего {prompt_tokens + completion_tokens}"
+    # Получаем информацию о модели
+    model_info = openai_client.get_user_model(user_id)
+    total_cost = input_cost + output_cost
+    
+    token_info = f"\n\n📊 Модель: <b>{model_info['name']}</b>\n" \
+                 f"Токены: отправлено {prompt_tokens}, получено {completion_tokens}, всего {prompt_tokens + completion_tokens}\n" \
+                 f"Стоимость: ввод ${input_cost:.6f} (₽{input_cost_rub:.2f}), вывод ${output_cost:.6f} (₽{output_cost_rub:.2f}), Всего: ${total_cost:.6f} (₽{total_cost_rub:.2f})"
     response_with_tokens = response + token_info
     
     # Обрабатываем длинные ответы (если они превышают лимит Telegram в 4096 символов)
